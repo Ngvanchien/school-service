@@ -1,0 +1,25 @@
+server:
+  port: 8081
+spring:
+  application:
+    name: auth-service
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/authdb}
+    username: ${SPRING_DATASOURCE_USERNAME:auth}
+    password: ${SPRING_DATASOURCE_PASSWORD:auth}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
+
+jwt:
+  secret: "${JWT_SECRET:-S!aQ3xR7vZ0mB2pL9wT8yN4rU6kJ1hF5eD3cG7aH9qW2xE4tY6uI8oP0}"
+  issuer: school-ms
+  accessTtl: 300        # 5 phút
+  refreshTtl: 36000    # 1 ngày
+
