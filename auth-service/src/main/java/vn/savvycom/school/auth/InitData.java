@@ -13,37 +13,75 @@ import java.util.List;
 @Configuration
 @RequiredArgsConstructor
 public class InitData {
+
   private final PasswordEncoder encoder;
 
   @Bean
-  CommandLineRunner seed(UserRepository users, RoleRepository roles, PermissionRepository perms){
+  CommandLineRunner seed(
+          UserRepository userRepository,
+          RoleRepository roleRepository,
+          PermissionRepository permissionRepository
+  ) {
     return args -> {
-      if (roles.count() == 0) {
-        // Permissions (simple demo)
-        Permission pRead = new Permission(); pRead.setCode("STUDENT_READ");
-        Permission pWrite = new Permission(); pWrite.setCode("STUDENT_WRITE");
-        Permission pPoint = new Permission(); pPoint.setCode("POINT_READ");
-        perms.saveAll(List.of(pRead, pWrite, pPoint));
 
-        Role admin = new Role(); admin.setName("ADMIN"); admin.setDataScope(DataScopeType.ALL);
-        admin.getPermissions().addAll(perms.findAll());
-        Role manager = new Role(); manager.setName("SCHOOL_MANAGER"); manager.setDataScope(DataScopeType.SCHOOL);
-        manager.getPermissions().addAll(perms.findAll());
-        Role student = new Role(); student.setName("STUDENT"); student.setDataScope(DataScopeType.SELF);
-        roles.saveAll(List.of(admin, manager, student));
+      if (roleRepository.count() == 0) {
 
-        User uAdmin = new User(); uAdmin.setUsername("admin"); uAdmin.setPassword(encoder.encode("admin123"));
-        uAdmin.getRoles().add(admin);
-        users.save(uAdmin);
+        /* ========= PERMISSIONS ========= */
+        Permission studentReadPermission = new Permission();
+        studentReadPermission.setCode("STUDENT_READ");
 
-        User uMgr = new User(); uMgr.setUsername("manager1"); uMgr.setPassword(encoder.encode("manager123"));
-        uMgr.setSchoolId(100L); uMgr.getRoles().add(manager);
-        users.save(uMgr);
+        Permission studentWritePermission = new Permission();
+        studentWritePermission.setCode("STUDENT_WRITE");
 
-        User uStu = new User(); uStu.setUsername("student1"); uStu.setPassword(encoder.encode("student123"));
-        uStu.setSchoolId(100L); uStu.getRoles().add(student);
-        users.save(uStu);
+        Permission pointReadPermission = new Permission();
+        pointReadPermission.setCode("POINT_READ");
+
+        permissionRepository.saveAll(List.of(
+                studentReadPermission,
+                studentWritePermission,
+                pointReadPermission
+        ));
+
+        /* ========= ROLES ========= */
+        Role adminRole = new Role();
+        adminRole.setName("ADMIN");
+        adminRole.setDataScope(DataScopeType.ALL);
+        adminRole.getPermissions().addAll(permissionRepository.findAll());
+
+        Role managerRole = new Role();
+        managerRole.setName("SCHOOL_MANAGER");
+        managerRole.setDataScope(DataScopeType.SCHOOL);
+        managerRole.getPermissions().addAll(permissionRepository.findAll());
+
+        Role studentRole = new Role();
+        studentRole.setName("STUDENT");
+        studentRole.setDataScope(DataScopeType.SELF);
+
+        roleRepository.saveAll(List.of(adminRole, managerRole, studentRole));
+
+        /* ========= USERS ========= */
+        User adminUser = new User();
+        adminUser.setUsername("admin");
+        adminUser.setPassword(encoder.encode("admin123"));
+        adminUser.getRoles().add(adminRole);
+        userRepository.save(adminUser);
+
+        User managerUser = new User();
+        managerUser.setUsername("manager1");
+        managerUser.setPassword(encoder.encode("manager123"));
+        managerUser.setSchoolId(100L);
+        managerUser.getRoles().add(managerRole);
+        userRepository.save(managerUser);
+
+        User studentUser = new User();
+        studentUser.setUsername("student1");
+        studentUser.setPassword(encoder.encode("student123"));
+        studentUser.setSchoolId(100L);
+        studentUser.setStudentId(3L);
+        studentUser.getRoles().add(studentRole);
+        userRepository.save(studentUser);
       }
     };
   }
 }
+

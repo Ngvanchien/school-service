@@ -26,6 +26,7 @@ public class JwtUtil {
         .claim("username", user.getUsername())
         .claim("roles", roles)
         .claim("schoolId", user.getSchoolId())
+        .claim("studentId", user.getStudentId())
         .claim("dataScope", maxScope.name())
         .setExpiration(Date.from(Instant.now().plusSeconds(accessTtl)))
         .signWith(Keys.hmacShaKeyFor(secret.getBytes()), SignatureAlgorithm.HS256)

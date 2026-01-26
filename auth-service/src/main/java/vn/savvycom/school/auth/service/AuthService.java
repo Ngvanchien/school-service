@@ -19,35 +19,60 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
+
   private final UserRepository userRepository;
-  private final PasswordEncoder encoder;
-  private final JwtUtil jwt;
+  private final PasswordEncoder passwordEncoder;
+  private final JwtUtil jwtUtil;
   private final RefreshTokenRepository refreshTokenRepository;
 
-  @Value("${jwt.refreshTtl}") private long refreshTtl;
+  @Value("${jwt.refreshTtl}")
+  private long refreshTokenTtl;
 
   public Map<String, String> login(String username, String password) {
-    User u = userRepository.findByUsername(username)
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-    if (!Boolean.TRUE.equals(u.getEnabled()) || !encoder.matches(password, u.getPassword()))
+
+    User user = userRepository.findByUsername(username)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+
+    if (!Boolean.TRUE.equals(user.getEnabled())
+            || !passwordEncoder.matches(password, user.getPassword())) {
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-    String access = jwt.generateAccessToken(u);
-    RefreshToken rt = new RefreshToken();
-    rt.setToken(UUID.randomUUID().toString());
-    rt.setUser(u);
-    rt.setExpiresAt(Instant.now().plusSeconds(refreshTtl));
-    refreshTokenRepository.save(rt);
-    return Map.of("accessToken", access, "refreshToken", rt.getToken(), "tokenType", "Bearer");
+    }
+
+    String accessToken = jwtUtil.generateAccessToken(user);
+
+    RefreshToken refreshToken = new RefreshToken();
+    refreshToken.setToken(UUID.randomUUID().toString());
+    refreshToken.setUser(user);
+    refreshToken.setExpiresAt(Instant.now().plusSeconds(refreshTokenTtl));
+
+    refreshTokenRepository.save(refreshToken);
+
+    return Map.of(
+            "accessToken", accessToken,
+            "refreshToken", refreshToken.getToken(),
+            "tokenType", "Bearer"
+    );
   }
 
-  public Map<String, String> refresh(String refreshToken) {
-    RefreshToken rt = refreshTokenRepository.findByTokenAndRevokedFalse(refreshToken)
-        .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
-    if (rt.getExpiresAt().isBefore(Instant.now())) {
-      rt.setRevoked(true); refreshTokenRepository.save(rt);
+
+  public Map<String, String> refresh(String refreshTokenValue) {
+
+    RefreshToken refreshToken = refreshTokenRepository
+            .findByTokenAndRevokedFalse(refreshTokenValue)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+
+    if (refreshToken.getExpiresAt().isBefore(Instant.now())) {
+      refreshToken.setRevoked(true);
+      refreshTokenRepository.save(refreshToken);
       throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh expired");
     }
-    String access = jwt.generateAccessToken(rt.getUser());
-    return Map.of("accessToken", access, "tokenType", "Bearer");
+
+    String newAccessToken = jwtUtil.generateAccessToken(refreshToken.getUser());
+
+    return Map.of(
+            "accessToken", newAccessToken,
+            "tokenType", "Bearer"
+    );
   }
 }
+

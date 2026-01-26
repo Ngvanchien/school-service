@@ -18,6 +18,7 @@ public class User {
   @Column(nullable = false)
   private String password;
   private Long schoolId;
+  private Long studentId;
   private Boolean enabled = true;
 
   @ManyToMany(fetch = FetchType.EAGER)
