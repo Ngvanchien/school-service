@@ -17,6 +17,8 @@ services:
       TZ: Asia/Ho_Chi_Minh
     command: ["postgres", "-c", "timezone=Asia/Ho_Chi_Minh"]
     ports: ["5433:5432"]
+    volumes:
+      - auth_data:/var/lib/postgresql/data
 
   student-db:
     image: postgres:16
@@ -27,6 +29,8 @@ services:
       TZ: Asia/Ho_Chi_Minh
     command: ["postgres", "-c", "timezone=Asia/Ho_Chi_Minh"]
     ports: ["5434:5432"]
+    volumes:
+      - student_data:/var/lib/postgresql/data
 
   point-db:
     image: postgres:16
@@ -37,6 +41,8 @@ services:
       TZ: Asia/Ho_Chi_Minh
     command: ["postgres", "-c", "timezone=Asia/Ho_Chi_Minh"]
     ports: ["5435:5432"]
+    volumes:
+      - point_data:/var/lib/postgresql/data
 
   # Services
   auth-service:
@@ -96,4 +102,10 @@ services:
       - auth-service
       - student-service
       - point-service
-    ports: ["8080:8080"]
+    ports: ["8090:8090"]
+
+volumes:
+  auth_data:
+  student_data:
+  point_data:
+
